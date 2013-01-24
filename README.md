@@ -1,7 +1,7 @@
 iphone_messages_dump
 ====================
 
-A python script to dump iMessages from an iPhone backup to a csv file.
+A python script to dump texts from iMessage from an iPhone backup to a csv file.
 
 Originally based on Jehiah Czebotar's script to dump iMessages to a csv file for dashboard parsing.
 
