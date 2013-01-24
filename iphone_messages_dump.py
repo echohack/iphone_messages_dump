@@ -99,7 +99,7 @@ def extract_messages(db_file):
             continue
         dt = datetime.datetime.utcfromtimestamp(ts)
 
-        #print('[%s] %r %r' % (dt, row.get('text'), row))
+        #print('[%s] %r %r' % (dt, row.get('text'), row)) -- debug
 
         if options.sent_only and not sent:
             skipped += 1
@@ -118,8 +118,8 @@ def extract_messages(db_file):
         yield dict(
             sent='1' if sent else '0',
             service='iMessage' if is_imessage else 'SMS',
-            subject=str(row['subject'] or ''),  # _utf8()
-            text=str(row['text'] or '').replace('\n', r'\n'),  # _utf8()
+            subject=(row['subject'] or ''),
+            text=(row['text'] or '').replace('\n', r'\n'),
             ts=ts,
             address=address,
         )
