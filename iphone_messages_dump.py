@@ -1,4 +1,3 @@
-
 """
 Copyright Jehiah Czebotar 2013
 http://jehiah.cz/
@@ -10,8 +9,6 @@ Modifications by Ryan Forsythe 2013:
 Modifications by David Echols 2013:
 * Port to Python 3.
 * Started refactor to patterns.
-
-NOTE: This is broken for SMS phone numbers. Currently researching a fix.
 """
 
 import optparse
