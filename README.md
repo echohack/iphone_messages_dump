@@ -14,6 +14,8 @@ New features:
 - Better unicode handling
 - Python 3.x style string format.
 
+See the iphonewiki for more information on how this script works. http://theiphonewiki.com/wiki/IMessage#References
+
 TODO:
 
 - Refactor to patterns.
