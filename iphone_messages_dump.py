@@ -1,14 +1,10 @@
 """
-Copyright Jehiah Czebotar 2013
+This software is released under the MIT License.
+http://opensource.org/licenses/MIT
+
+Originially created by Jehiah Czebotar and modified by Ryan Forsythe and David Echols.
 http://jehiah.cz/
-
-Modifications by Ryan Forsythe 2013:
-* Switch to stdlib's optparse rather than relying on tornado's option parsing
-* Add new-style backup database parsing.
-
-Modifications by David Echols 2013:
-* Port to Python 3.
-* Started refactor to patterns.
+http://dechols.com/
 """
 
 import optparse
