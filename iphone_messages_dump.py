@@ -2,7 +2,8 @@
 This software is released under the MIT License.
 http://opensource.org/licenses/MIT
 
-Originially created by Jehiah Czebotar and modified by Ryan Forsythe and David Echols.
+Originially created by Jehiah Czebotar.
+Modified by Ryan Forsythe and David Echols.
 http://jehiah.cz/
 http://dechols.com/
 """
@@ -14,6 +15,7 @@ import sqlite3
 import datetime
 import time
 import csv
+from collections import OrderedDict
 
 """
 The madrid offset is the offset from 1 Jan 1970 to 1 Jan 2001.
@@ -43,7 +45,7 @@ def dict_factory(cursor, row):
     return d
 
 
-class DB(object):
+class DB():
     def __init__(self, *args, **kwargs):
         self._db = sqlite3.connect(*args, **kwargs)
         self._db.row_factory = dict_factory
@@ -67,9 +69,10 @@ def extract_messages(db_file):
     db = DB(db_file)
     skipped = 0
     found = 0
+    query_texts = "select * from message"
 
-    for row in db.query('select * from message'):
-        ts = row['date']
+    for row in db.query(query_texts):
+        timestamp = row['date']
         is_imessage = False
         if not 'is_madrid' in row:
             # New-style (?) backups
@@ -84,20 +87,18 @@ def extract_messages(db_file):
 
         if 'is_madrid' in row:
             if row['is_madrid']:
-                ts += MADRID_OFFSET
+                timestamp += MADRID_OFFSET
         else:
-            ts += MADRID_OFFSET
+            timestamp += MADRID_OFFSET
         if not row['text']:
             skipped += 1
             continue
-        dt = datetime.datetime.utcfromtimestamp(ts)
-
-        #print('[%s] %r %r' % (dt, row.get('text'), row)) -- debug
+        utc_datetime = datetime.datetime.utcfromtimestamp(timestamp)
 
         if options.sent_only and not sent:
             skipped += 1
             continue
-        if dt.year != options.year:
+        if utc_datetime.year != options.year:
             skipped += 1
             continue
         found += 1
@@ -113,34 +114,49 @@ def extract_messages(db_file):
             service='iMessage' if is_imessage else 'SMS',
             subject=(row['subject'] or ''),
             text=(row['text'] or '').replace('\n', r'\n'),
-            ts=ts,
+            timestamp=timestamp,
             address=address,
         )
 
     print('found {0} skipped {1}'.format(found, skipped))
 
 
+def set_privacy(item):
+    """
+    Hide values by default for privacy.
+    """
+
+    privacy_text = "Text hidden for privacy. Use -p flag to enable text."
+    item['text'] = privacy_text
+
+
+def write_csv(file_object):
+    fieldnames = {"timestamp": None, "service": None, "sent": None, "address": None, "subject": None, "text": None}
+    ordered_fieldnames = OrderedDict(sorted(fieldnames.items(), key=lambda t: t[0]))
+    writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
+    writer.writeheader()
+    pattern = os.path.expanduser(options.input_pattern)
+    input_pattern_list = glob.glob(pattern)
+    for db_file in input_pattern_list:
+        print("reading {0}. use --input-pattern to select only this file".format(db_file))
+        for item in extract_messages(db_file):
+            if options.privacy:
+                set_privacy(item)
+            writer.writerow(item)
+
+
 def run():
-    assert not os.path.exists(options.output_file)
     print('writing out to {0}'.format(options.output_file))
     with open(options.output_file, 'w', encoding="utf8") as f:
-        columns = ["ts", "service", "sent", "address", "subject", "text"]
-        writer = csv.DictWriter(f, columns)
-        writer.writerow(dict([[x, x] for x in columns]))
-        pattern = os.path.expanduser(options.input_pattern)
-        for db_file in glob.glob(pattern):
-            print("reading {0}. use --input-patern to select only this file".format(db_file))
-            for row in extract_messages(db_file):
-                if options.include_message_text:  # exclude message text by default for privacy.
-                    row['text'] = ''
-                writer.writerow(row)
+        write_csv(f)
+
 
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("-i", "--input_pattern", type=str, default=DEFAULT_BACKUP_LOCATION_WIN)
-    parser.add_option("-o", "--output_file", type=str, default=("txt_messages" + time.strftime("%d%m%Y%H%M%S", time.localtime()) + ".csv"))
     parser.add_option("-y", "--year", type=int, default=2012)
+    parser.add_option("-o", "--output_file", type=str, default=("txt_messages_" + time.strftime("%Y-%m-%d-%H%M%S", time.localtime()) + ".csv"))
     parser.add_option("-s", "--sent_only", action="store_true", default=False)
-    parser.add_option("-t", "--include_message_text", action="store_true", default=True)
+    parser.add_option("-p", "--privacy", action="store_true", default=True)
     (options, args) = parser.parse_args()
     run()
