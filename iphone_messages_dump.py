@@ -131,7 +131,7 @@ def run():
         for db_file in glob.glob(pattern):
             print("reading {0}. use --input-patern to select only this file".format(db_file))
             for row in extract_messages(db_file):
-                if not options.include_message_text:
+                if options.include_message_text:  # exclude message text by default for privacy.
                     row['text'] = ''
                 writer.writerow(row)
 
