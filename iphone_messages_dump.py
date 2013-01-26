@@ -8,7 +8,7 @@ http://jehiah.cz/
 http://dechols.com/
 """
 
-import optparse
+import argparse
 import glob
 import os
 import sqlite3
@@ -35,7 +35,7 @@ MADRID_FLAGS_SENT = [36869, 45061]
 DEFAULT_BACKUP_LOCATION_MAC = "~/Library/Application Support/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 DEFAULT_BACKUP_LOCATION_WIN = "C:\\Users\\David\\AppData\\Roaming\\Apple Computer\\MobileSync\\Backup\\*\\3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 # Command line args will get parsed into this:
-options = None
+args = None
 
 
 def dict_factory(cursor, row):
@@ -95,10 +95,10 @@ def extract_messages(db_file):
             continue
         utc_datetime = datetime.datetime.utcfromtimestamp(timestamp)
 
-        if options.sent_only and not sent:
+        if args.sent_only and not sent:
             skipped += 1
             continue
-        if utc_datetime.year != options.year:
+        if utc_datetime.year != args.year:
             skipped += 1
             continue
         found += 1
@@ -135,28 +135,31 @@ def write_csv(file_object):
     ordered_fieldnames = OrderedDict(sorted(fieldnames.items(), key=lambda t: t[0]))
     writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
     writer.writeheader()
-    pattern = os.path.expanduser(options.input_pattern)
+    pattern = os.path.expanduser(args.input_pattern)
     input_pattern_list = glob.glob(pattern)
     for db_file in input_pattern_list:
         print("reading {0}. use --input-pattern to select only this file".format(db_file))
         for item in extract_messages(db_file):
-            if options.privacy:
+            if args.privacy:
                 set_privacy(item)
             writer.writerow(item)
 
 
 def run():
-    print('writing out to {0}'.format(options.output_file))
-    with open(options.output_file, 'w', encoding="utf8") as f:
+    print('writing out to {0}'.format(args.output_file))
+    with open(args.output_file, 'w', encoding="utf8") as f:
         write_csv(f)
 
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser()
-    parser.add_option("-i", "--input_pattern", type=str, default=DEFAULT_BACKUP_LOCATION_WIN)
-    parser.add_option("-y", "--year", type=int, default=2012)
-    parser.add_option("-o", "--output_file", type=str, default=("txt_messages_" + time.strftime("%Y-%m-%d-%H%M%S", time.localtime()) + ".csv"))
-    parser.add_option("-s", "--sent_only", action="store_true", default=False)
-    parser.add_option("-p", "--privacy", action="store_true", default=True)
-    (options, args) = parser.parse_args()
+    output_time = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
+    parser = argparse.ArgumentParser(description="Convert iMessage texts from iPhone backup files to csv.")
+    parser.add_argument("-i", "--input_pattern", type=str, default=DEFAULT_BACKUP_LOCATION_WIN,
+                            help="The location(s) of your iPhone backup files. Will match patterns according to glob syntax.")
+    parser.add_argument("-y", "--year", type=int, default=2012, help="The year for which you want to output texts.")
+    parser.add_argument("-o", "--output_file", type=str, default=("txt_messages_{0}.csv".format(output_time)),
+                            help="The output file name.")
+    parser.add_argument("-s", "--sent_only", action="store_true", default=False, help="Output only sent texts. Excludes all other texts.")
+    parser.add_argument("-p", "--privacy", action="store_true", default=True, help="Enable privacy measures.")
+    args = parser.parse_args()
     run()
