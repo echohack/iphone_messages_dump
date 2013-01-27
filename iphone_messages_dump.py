@@ -39,7 +39,7 @@ def backup_location(platform):
     if platform in mac_names:
         return "~/Library/Application Support/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
     elif platform in windows_names:
-        return "C:\\Users\\David\\AppData\\Roaming\\Apple Computer\\MobileSync\\Backup\\*\\3d0d7e5fb2ce288813306e4d4636395e047a3d28"
+        return "C:\\Users\\*\\AppData\\Roaming\\Apple Computer\\MobileSync\\Backup\\*\\3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 
 
 def dict_factory(cursor, row):
