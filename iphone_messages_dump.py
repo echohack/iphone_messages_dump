@@ -13,6 +13,7 @@ import glob
 import os
 import sqlite3
 import csv
+import json
 import sys
 from collections import OrderedDict
 
@@ -123,97 +124,119 @@ def extract_messages(db_file):
     return message_list
 
 
-def append_csv(file_object, ordered_fieldnames, compared_list):
-    writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
-    for item in compared_list:
-        writer.writerow(item)
-
-
-def compare_csv(file_name, db_message_list):
-    db_guid_list = []
+def compare_files(file_name, message_list):
+    message_guid_list = []
     file_guid_list = []
     compared_list = []
 
-    for message_list in db_message_list:
-        for item in message_list:
-            db_guid_list.append(item['guid'])
+    for item in message_list:
+        message_guid_list.append(item['guid'])
 
-    with open(file_name, newline='') as f:
-        reader = csv.DictReader(f)
-        for item in reader:
-            file_guid_list.append(item['guid'])
+    if args.output_data == "csv":
+        with open(file_name, newline='') as f:
+            reader = csv.DictReader(f)
+            for item in reader:
+                file_guid_list.append(item['guid'])
+    elif args.output_data == "json":
+        with open(file_name, "r") as f:
+            reader = json.load(f)
+            for item in reader:
+                file_guid_list.append(item['guid'])
 
-    compared_set = set(db_guid_list) - set(file_guid_list)
+    compared_set = set(message_guid_list) - set(file_guid_list)
 
-    for message_list in db_message_list:
-        for item in message_list:
-            if item['guid'] in compared_set:
-                compared_list.append(item)
+    for item in message_list:
+        if item['guid'] in compared_set:
+            compared_list.append(item)
 
     return compared_list
 
 
-def get_db_message_list():
-    db_message_list = []
+def get_message_list():
+    message_list = []
     pattern = os.path.expanduser(args.input_pattern)
     input_pattern_list = glob.glob(pattern)
     for db_file in input_pattern_list:
         print("reading {0}.".format(db_file))
-        message_list = extract_messages(db_file)
-        db_message_list.append(message_list)
-    return db_message_list
+        messages = extract_messages(db_file)
+        for item in messages:
+            message_list.append(item)
+    return message_list
 
 
-def set_privacy(db_message_list):
+def set_privacy(message_list):
     """
     Hide values by default for privacy.
     """
 
     privacy_text = "Text hidden for privacy. Use -p flag to enable text."
-    for message_list in db_message_list:
-        for item in message_list:
-            item['text'] = privacy_text
+    for item in message_list:
+        item['text'] = privacy_text
 
 
-def write_new_csv(file_object, db_message_list, ordered_fieldnames):
+def write_csv(file_object, message_list, ordered_fieldnames, new_file=False):
     writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
-    writer.writeheader()
-    for message_list in db_message_list:
-        for item in message_list:
-            writer.writerow(item)
+    if new_file:
+        writer.writeheader()
+    for item in message_list:
+        writer.writerow(item)
 
 
 def run():
-    fieldnames = {"timestamp": None, "service": None, "sent": None, "address": None, "subject": None, "text": None, "guid": None}
+    if args.output_data == "csv":
+        args.output_file += ".csv"
+    elif args.output_data == "json":
+        args.output_file += ".json"
+
+    fieldnames = {"timestamp": None, "service": None, "sent": None, "address": None,
+        "subject": None, "text": None, "guid": None}
     ordered_fieldnames = OrderedDict(sorted(fieldnames.items(), key=lambda t: t[0]))
-    db_message_list = get_db_message_list()
+    message_list = get_message_list()
     if args.privacy:
-        set_privacy(db_message_list)
-
+        set_privacy(message_list)
+    message_count = len(message_list)
     if os.path.exists(args.output_file):
-        compared_list = compare_csv(args.output_file, db_message_list)
-        count = len(compared_list)
+        compared_list = compare_files(args.output_file, message_list)
+        compared_count = len(compared_list)
         if compared_list:
-            print("{0} new messages detected. Adding messages to {1}.".format(count, args.output_file))
-            with open(args.output_file, 'a', encoding="utf8") as f:
-                append_csv(f, ordered_fieldnames, compared_list)
-        else:
-            print("0 new messages detected. No messages added.")
-    else:
-        print('Writing messages to new file at {0}'.format(args.output_file))
-        with open(args.output_file, 'w', encoding="utf8") as f:
-            write_new_csv(f, db_message_list, ordered_fieldnames)
+            print("{0} new messages detected. Adding messages to {1}.".format(compared_count, args.output_file))
+            if args.output_data == "csv":
+                with open(args.output_file, 'a', encoding="utf8") as f:
+                    write_csv(f, ordered_fieldnames, compared_list)
+            elif args.output_data == "json":
+                with open(args.output_file, "r") as r:
+                    reader = json.load(r)
+                    for item in compared_list:
+                        reader.append(item)
+                    with open(args.output_file, "w") as f:
+                        json.dump(message_list, f)
 
+                print(compared_list)
+        else:
+            print("{0} new messages detected. No messages added.".format(compared_count))
+    else:
+        print('New file detected. Writing {0} messages to new file at {1}'.format(message_count, args.output_file))
+        if args.output_data == "csv":
+            with open(args.output_file, "w", encoding="utf8") as f:
+                write_csv(f, message_list, ordered_fieldnames, True)
+        elif args.output_data == "json":
+            with open(args.output_file, "w", encoding="utf8") as f:
+                json.dump(message_list, f)
 
 if __name__ == "__main__":
     backup_location = backup_location(sys.platform)
 
-    parser = argparse.ArgumentParser(description="Convert iMessage texts from iPhone backup files to csv.")
+    parser = argparse.ArgumentParser(description="Convert iMessage texts from iPhone backup files to readable data formats."
+            "Supported formats include csv and json.")
+    parser.add_argument("-d", "--output_data", type=str, default="json",
+            help="The format of data output by the program. csv and json are supported.")
     parser.add_argument("-i", "--input_pattern", type=str, default=backup_location,
-                            help="The location(s) of your iPhone backup files. Will match patterns according to glob syntax.")
-    parser.add_argument("-o", "--output_file", type=str, default=("txt_messages.csv"),
-                            help="The output file name.")
-    parser.add_argument("-s", "--sent_only", action="store_true", default=False, help="Output only sent texts. Excludes all other texts.")
-    parser.add_argument("-p", "--privacy", action="store_true", default=True, help="Enable privacy measures.")
+            help="The location(s) of your iPhone backup files. Will match patterns according to glob syntax.")
+    parser.add_argument("-o", "--output_file", type=str, default=("txt_messages"),
+            help="The output file name.")
+    parser.add_argument("-s", "--sent_only", action="store_true", default=False,
+            help="Output only sent texts. Excludes all other texts.")
+    parser.add_argument("-p", "--privacy", action="store_true", default=True,
+            help="Enable privacy measures.")
     args = parser.parse_args()
     run()
