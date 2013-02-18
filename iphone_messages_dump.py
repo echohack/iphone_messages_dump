@@ -123,15 +123,10 @@ def extract_messages(db_file):
     return message_list
 
 
-def set_privacy(db_message_list):
-    """
-    Hide values by default for privacy.
-    """
-
-    privacy_text = "Text hidden for privacy. Use -p flag to enable text."
-    for message_list in db_message_list:
-        for item in message_list:
-            item['text'] = privacy_text
+def append_csv(file_object, ordered_fieldnames, compared_list):
+    writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
+    for item in compared_list:
+        writer.writerow(item)
 
 
 def compare_csv(file_name, db_message_list):
@@ -158,22 +153,6 @@ def compare_csv(file_name, db_message_list):
     return compared_list
 
 
-def write_new_csv(file_object, ordered_fieldnames):
-    writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
-    writer.writeheader()
-    db_message_list = get_db_message_list()
-    set_privacy(db_message_list)
-    for message_list in db_message_list:
-        for item in message_list:
-            writer.writerow(item)
-
-
-def append_csv(file_object, ordered_fieldnames, compared_list):
-    writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
-    for item in compared_list:
-        writer.writerow(item)
-
-
 def get_db_message_list():
     db_message_list = []
     pattern = os.path.expanduser(args.input_pattern)
@@ -185,13 +164,33 @@ def get_db_message_list():
     return db_message_list
 
 
+def set_privacy(db_message_list):
+    """
+    Hide values by default for privacy.
+    """
+
+    privacy_text = "Text hidden for privacy. Use -p flag to enable text."
+    for message_list in db_message_list:
+        for item in message_list:
+            item['text'] = privacy_text
+
+
+def write_new_csv(file_object, db_message_list, ordered_fieldnames):
+    writer = csv.DictWriter(file_object, fieldnames=ordered_fieldnames)
+    writer.writeheader()
+    for message_list in db_message_list:
+        for item in message_list:
+            writer.writerow(item)
+
+
 def run():
     fieldnames = {"timestamp": None, "service": None, "sent": None, "address": None, "subject": None, "text": None, "guid": None}
     ordered_fieldnames = OrderedDict(sorted(fieldnames.items(), key=lambda t: t[0]))
+    db_message_list = get_db_message_list()
+    if args.privacy:
+        set_privacy(db_message_list)
 
     if os.path.exists(args.output_file):
-        db_message_list = get_db_message_list()
-        set_privacy(db_message_list)
         compared_list = compare_csv(args.output_file, db_message_list)
         count = len(compared_list)
         if compared_list:
@@ -199,11 +198,11 @@ def run():
             with open(args.output_file, 'a', encoding="utf8") as f:
                 append_csv(f, ordered_fieldnames, compared_list)
         else:
-            print("Zero new messages detected. No messages added.")
+            print("0 new messages detected. No messages added.")
     else:
         print('Writing messages to new file at {0}'.format(args.output_file))
         with open(args.output_file, 'w', encoding="utf8") as f:
-            write_new_csv(f, ordered_fieldnames)
+            write_new_csv(f, db_message_list, ordered_fieldnames)
 
 
 if __name__ == "__main__":
