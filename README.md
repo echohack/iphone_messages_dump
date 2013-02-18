@@ -11,12 +11,10 @@ See the iphonewiki for more information on how this script works. http://theipho
 
 TODO:
 
-- When privacy is enabled, write a different file. Currently writing with and without privacy will cause duplicate items.
 - Proper error handling for Madrid flags 32773, 77825, 102405.
 - Unit tests with Nose.
-- Performance improvements.
-- Output choice. Need to add support for JSON.
 - Proper license file
+- Refactor csv / json if else handling
 
 
 List of done:
@@ -31,7 +29,9 @@ List of done:
 - Date time stamp! (Replaced by compare logic.)
 - Better unicode handling
 - Python 3.x style string format.
-
+- When privacy is enabled, write a different file. Currently writing with and without privacy will cause duplicate items.
+- Performance improvements.
+- Output choice. Need to add support for JSON.
 
 Backlog:
 
