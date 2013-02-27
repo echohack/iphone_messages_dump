@@ -43,17 +43,16 @@ def backup_location(platform):
         return "C:/Users/*/AppData/Roaming/Apple Computer/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 
 
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
-
 class DB():
     def __init__(self, *args, **kwargs):
         self._db = sqlite3.connect(*args, **kwargs)
-        self._db.row_factory = dict_factory
+        self._db.row_factory = self._dict_factory
+
+    def _dict_factory(self, cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
     def query(self, sql, params=None):
         try:
@@ -180,10 +179,7 @@ def write_csv(file_object, message_list, ordered_fieldnames, new_file=False):
 
 
 def run():
-    if args.output_data == "csv":
-        args.output_file += ".csv"
-    elif args.output_data == "json":
-        args.output_file += ".json"
+    args.output_file += ".{0}".format(args.output_data)
 
     fieldnames = {"timestamp": None, "service": None, "sent": None, "address": None,
         "subject": None, "text": None, "guid": None}
