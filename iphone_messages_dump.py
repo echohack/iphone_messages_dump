@@ -221,13 +221,11 @@ def run():
                 json.dump(message_list, f)
 
 if __name__ == "__main__":
-    backup_location = backup_location(sys.platform)
-
     parser = argparse.ArgumentParser(description="Convert iMessage texts from iPhone backup files to readable data formats."
             "Supported formats include csv and json.")
     parser.add_argument("-d", "--output_data", type=str, default="json",
             help="The format of data output by the program. csv and json are supported.")
-    parser.add_argument("-i", "--input_pattern", type=str, default=backup_location,
+    parser.add_argument("-i", "--input_pattern", type=str, default=backup_location(sys.platform),
             help="The location(s) of your iPhone backup files. Will match patterns according to glob syntax.")
     parser.add_argument("-o", "--output_file", type=str, default=("txt_messages"),
             help="The output file name.")
