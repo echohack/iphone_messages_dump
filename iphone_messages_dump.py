@@ -35,12 +35,12 @@ MADRID_FLAGS_SENT = [36869, 45061]
 
 
 def backup_location(platform):
-    mac_names = "darwin", "osx", "mac"
-    windows_names = "win32"
+    mac_names = {"darwin"}
+    windows_names = {"win32"}
     if platform in mac_names:
         return "~/Library/Application Support/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
     elif platform in windows_names:
-        return "C:\\Users\\*\\AppData\\Roaming\\Apple Computer\\MobileSync\\Backup\\*\\3d0d7e5fb2ce288813306e4d4636395e047a3d28"
+        return "C:/Users/*/AppData/Roaming/Apple Computer/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 
 
 def dict_factory(cursor, row):
@@ -83,18 +83,15 @@ def extract_messages(db_file):
         if not 'is_madrid' in row:
             is_imessage = row['service']
             sent = row['is_sent']
+            timestamp += MADRID_OFFSET
         else:
             is_imessage = row['is_madrid']
             if is_imessage:
                 sent = row['madrid_flags'] in MADRID_FLAGS_SENT
+                timestamp += MADRID_OFFSET
             else:
                 sent = row['flags'] in [3, 35]
 
-        if 'is_madrid' in row:
-            if row['is_madrid']:
-                timestamp += MADRID_OFFSET
-        else:
-            timestamp += MADRID_OFFSET
         if not row['text']:
             skipped += 1
             continue
@@ -111,13 +108,13 @@ def extract_messages(db_file):
             address = row.get('address') or row['account']
 
         row_data = dict(sent='1' if sent else '0',
-                    service='iMessage' if is_imessage else 'SMS',
-                    subject=(row['subject'] or ''),
-                    text=(row['text'] or '').replace('\n', r'\n'),
-                    timestamp=timestamp,
-                    address=address,
-                    guid=row['guid']
-                    )
+                        service='iMessage' if is_imessage else 'SMS',
+                        subject=(row['subject'] or ''),
+                        text=(row['text'] or '').replace('\n', r'\n'),
+                        timestamp=timestamp,
+                        address=address,
+                        guid=row['guid']
+                        )
         message_list.append(row_data)
 
     print('found {0} skipped {1}'.format(found, skipped))
