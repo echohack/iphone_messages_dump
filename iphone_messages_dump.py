@@ -1,13 +1,3 @@
-"""
-This software is released under the MIT License.
-http://opensource.org/licenses/MIT
-
-Originially created by Jehiah Czebotar.
-Modified by Ryan Forsythe and David Echols.
-http://jehiah.cz/
-http://dechols.com/
-"""
-
 import argparse
 import glob
 import os

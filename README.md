@@ -15,12 +15,12 @@ TODO:
 
 - Proper error handling for Madrid flags 32773, 77825, 102405.
 - Unit tests with Nose.
-- Proper license file
 - Refactor csv / json if else handling
 
 
 List of done:
 
+- Proper license file
 - Dynamically determine OS (Mac/Windows) and use default location.
 - Refactor to patterns.
 - Create dictionaries explicitly instead of implicitly.
