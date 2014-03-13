@@ -184,7 +184,7 @@ def run():
         if compared_list:
             print("{0} new messages detected. Adding messages to {1}.".format(compared_count, args.output_file))
             if args.output_data == "csv":
-                with open(args.output_file, 'a', encoding="utf8") as f:
+                with open(args.output_file, 'a') as f:
                     write_csv(f, ordered_fieldnames, compared_list)
             elif args.output_data == "json":
                 with open(args.output_file, "r") as r:
@@ -200,10 +200,10 @@ def run():
     else:
         print('New file detected. Writing {0} messages to new file at {1}'.format(message_count, args.output_file))
         if args.output_data == "csv":
-            with open(args.output_file, "w", encoding="utf8") as f:
+            with open(args.output_file, "w") as f:
                 write_csv(f, message_list, ordered_fieldnames, True)
         elif args.output_data == "json":
-            with open(args.output_file, "w", encoding="utf8") as f:
+            with open(args.output_file, "w") as f:
                 json.dump(message_list, f)
 
 if __name__ == "__main__":
