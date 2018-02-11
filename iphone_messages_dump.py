@@ -28,9 +28,9 @@ def backup_location(platform):
     mac_names = {"darwin"}
     windows_names = {"win32"}
     if platform in mac_names:
-        return "~/Library/Application Support/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
+        return "~/Library/Application Support/MobileSync/Backup/*/3d/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
     elif platform in windows_names:
-        return "C:/Users/*/AppData/Roaming/Apple Computer/MobileSync/Backup/*/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
+        return "C:/Users/*/AppData/Roaming/Apple Computer/MobileSync/Backup/*/3d/3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 
 
 class DB():
